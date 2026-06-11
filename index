@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Shark-Tuna Euler Simulator</title>
+  <style>
+    :root {
+      --bg: #f4f7fb;
+      --surface: #ffffff;
+      --surface-2: #f8fbff;
+      --text: #1e293b;
+      --muted: #64748b;
+      --border: #dbe4f0;
+      --primary: #2563eb;
+      --primary-2: #dbeafe;
+      --tuna: #0ea5e9;
+      --shark: #f43f5e;
+      --success: #16a34a;
+      --warn: #d97706;
+      --radius: 14px;
+      --shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      height: 100%;
+      margin: 0;
+    }
+
+    body {
+      font-family: Inter, system-ui, -apple-system, sans-serif;
+      background: linear-gradient(180deg, #f8fbff 0%, #f2f6fb 100%);
+      color: var(--text);
+      line-height: 1.35;
+      padding: 10px;
+      overflow: hidden;
+    }
+
+    .container {
+      max-width: 1280px;
+      margin: 0 auto;
+      height: calc(100vh - 20px);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 0;
+      flex: 0 0 auto;
+    }
+
+    h1 {
+      margin: 0 0 4px;
+      font-size: clamp(1.35rem, 1.8vw, 1.9rem);
+      color: #0f172a;
+    }
+
+    .subtitle {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 330px 1fr;
+      gap: 12px;
+      align-items: stretch;
+      flex: 1 1 auto;
+      min-height: 0;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 14px;
+      min-height: 0;
+      overflow: hidden;
+    }
+
+    .card h2 {
+      margin: 0 0 10px;
+      font-size: 1rem;
+      color: #243244;
+      padding-bottom: 8px;
+      border-bottom: 1px solid #eef3f8;
+    }
+
+    .control-card {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      overflow: auto;
+      min-height: 0;
+    }
+
+    .controls {
+      display: grid;
+      gap: 8px;
+    }
+
+    .control-group label {
+      display: block;
+      font-size: 0.84rem;
+      font-weight: 700;
+      margin-bottom: 2px;
+    }
+
+    .label-desc {
+      display: block;
+      font-size: 0.72rem;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+
+    .slider-row {
+      display: grid;
+      grid-template-columns: 1fr 56px;
+      gap: 8px;
+      align-items: center;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      accent-color: var(--primary);
+      cursor: pointer;
+    }
+
+    .value-display {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 32px;
+      padding: 4px 6px;
+      border-radius: 8px;
+      background: var(--primary-2);
+      color: var(--primary);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-weight: 700;
+      font-size: 0.82rem;
+    }
+
+    .button-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-top: 2px;
+    }
+
+    button {
+      border: none;
+      border-radius: 10px;
+      min-height: 38px;
+      padding: 8px 10px;
+      font-size: 0.86rem;
+      font-weight: 800;
+      cursor: pointer;
+      transition: transform 0.12s ease, opacity 0.2s ease, background-color 0.2s ease;
+    }
+
+    button:hover { opacity: 0.95; }
+    button:active { transform: scale(0.985); }
+
+    .btn-primary { background: var(--primary); color: white; }
+    .btn-secondary { background: #e2e8f0; color: #1e293b; }
+    .btn-danger { background: #fee2e2; color: #be123c; }
+
+    .status-bar {
+      padding: 8px 10px;
+      border-radius: 10px;
+      background: var(--surface-2);
+      border: 1px solid #e7eff8;
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+
+    .stat {
+      background: #f8fbff;
+      border: 1px solid #e6eef8;
+      border-radius: 10px;
+      padding: 8px;
+    }
+
+    .stat-label {
+      display: block;
+      font-size: 0.7rem;
+      color: var(--muted);
+      margin-bottom: 3px;
+    }
+
+    .stat-value {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-weight: 700;
+      color: #0f172a;
+      font-size: 0.84rem;
+    }
+
+    .chart-card {
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      gap: 10px;
+      min-height: 0;
+    }
+
+    .canvas-wrap {
+      background: #fff;
+      border: 1px solid #e7eef6;
+      border-radius: 12px;
+      padding: 6px;
+      min-height: 0;
+      display: flex;
+    }
+
+    canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+      background: #fff;
+      border-radius: 8px;
+    }
+
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+      justify-content: center;
+      color: #334155;
+      font-size: 0.82rem;
+      font-weight: 700;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .legend-swatch {
+      width: 18px;
+      height: 4px;
+      border-radius: 999px;
+    }
+
+    .math-box {
+      margin-top: 2px;
+      background: #162232;
+      color: #dbeafe;
+      border-radius: 12px;
+      padding: 10px 12px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 0.74rem;
+      line-height: 1.35;
+      overflow-x: auto;
+    }
+
+    .math-title {
+      color: #fbbf24;
+      font-weight: 800;
+    }
+
+    .math-code {
+      color: #7dd3fc;
+    }
+
+    @media (max-width: 960px) {
+      body {
+        padding: 12px;
+        overflow: auto;
+      }
+
+      .container {
+        height: auto;
+      }
+
+      .layout {
+        grid-template-columns: 1fr;
+      }
+
+      .control-card {
+        overflow: visible;
+      }
+
+      .canvas-wrap {
+        min-height: 280px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Shark-Tuna Population Simulator</h1>
+      <p class="subtitle">Forward Euler integration with live drawnow-style plotting</p>
+    </header>
+
+    <div class="layout">
+      <section class="card control-card">
+        <h2>Initial Conditions & Rates</h2>
+
+        <div class="controls">
+          <div class="control-group">
+            <label for="p-tuna-init">Initial Tuna Population (T₀)</label>
+            <div class="slider-row">
+              <input type="range" id="p-tuna-init" min="10" max="150" value="60">
+              <span class="value-display" id="v-tuna-init">60</span>
+            </div>
+          </div>
+
+          <div class="control-group">
+            <label for="p-sharks-init">Initial Shark Population (S₀)</label>
+            <div class="slider-row">
+              <input type="range" id="p-sharks-init" min="5" max="100" value="20">
+              <span class="value-display" id="v-sharks-init">20</span>
+            </div>
+          </div>
+
+          <div class="control-group">
+            <label for="p-tuna-birth">Tuna Birth Rate (a)</label>
+            <span class="label-desc">Growth factor without predators</span>
+            <div class="slider-row">
+              <input type="range" id="p-tuna-birth" min="0.10" max="1.50" step="0.05" value="0.70">
+              <span class="value-display" id="v-tuna-birth">0.70</span>
+            </div>
+          </div>
+
+          <div class="control-group">
+            <label for="p-hunt">Hunting Efficiency (b)</label>
+            <span class="label-desc">Collision coefficient (S × T)</span>
+            <div class="slider-row">
+              <input type="range" id="p-hunt" min="0.005" max="0.10" step="0.005" value="0.02">
+              <span class="value-display" id="v-hunt">0.02</span>
+            </div>
+          </div>
+
+          <div class="control-group">
+            <label for="p-shark-death">Shark Death Rate (d)</label>
+            <span class="label-desc">Natural attrition of predators</span>
+            <div class="slider-row">
+              <input type="range" id="p-shark-death" min="0.10" max="1.50" step="0.05" value="0.50">
+              <span class="value-display" id="v-shark-death">0.50</span>
+            </div>
+          </div>
+
+          <div class="control-group">
+            <label for="p-dt">Time Step (dt)</label>
+            <span class="label-desc">Euler integration step size</span>
+            <div class="slider-row">
+              <input type="range" id="p-dt" min="0.01" max="0.20" step="0.01" value="0.04">
+              <span class="value-display" id="v-dt">0.04</span>
+            </div>
+          </div>
+
+          <div class="control-group">
+            <label for="p-max-time">Simulation Length</label>
+            <span class="label-desc">Total time horizon</span>
+            <div class="slider-row">
+              <input type="range" id="p-max-time" min="10" max="100" step="5" value="45">
+              <span class="value-display" id="v-max-time">45</span>
+            </div>
+          </div>
+
+          <div class="control-group">
+            <label for="p-speed">Animation Speed</label>
+            <span class="label-desc">Euler steps drawn per frame</span>
+            <div class="slider-row">
+              <input type="range" id="p-speed" min="1" max="20" step="1" value="3">
+              <span class="value-display" id="v-speed">3</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="button-row">
+          <button class="btn-primary" id="runBtn">Run</button>
+          <button class="btn-secondary" id="pauseBtn">Pause</button>
+          <button class="btn-danger" id="resetBtn">Reset</button>
+        </div>
+
+        <div class="status-bar" id="statusBar">Ready. Adjust parameters and run the simulation.</div>
+
+        <div class="stats">
+          <div class="stat">
+            <span class="stat-label">Time</span>
+            <span class="stat-value" id="stat-time">0.00</span>
+          </div>
+          <div class="stat">
+            <span class="stat-label">Tuna</span>
+            <span class="stat-value" id="stat-tuna">60.00</span>
+          </div>
+          <div class="stat">
+            <span class="stat-label">Sharks</span>
+            <span class="stat-value" id="stat-shark">20.00</span>
+          </div>
+        </div>
+
+        <div class="math-box">
+          <span class="math-title">// Forward Euler Mathematical State Engine</span><br><br>
+          <span class="math-code">
+            Status: <span id="math-status" style="color:#86efac;font-weight:700;">Ready</span><br>
+            System of equations:<br>
+            &nbsp;&nbsp;T' = (a · T) - (b · S · T)<br>
+            &nbsp;&nbsp;S' = (b · S · T) - (d · S)<br><br>
+            Forward update:<br>
+            &nbsp;&nbsp;T_next = T + dt · T'<br>
+            &nbsp;&nbsp;S_next = S + dt · S'
+          </span>
+        </div>
+      </section>
+
+      <section class="card chart-card">
+        <h2>Ecosystem Oscillations Over Time</h2>
+        <div class="canvas-wrap">
+          <canvas id="customCanvas" width="860" height="300"></canvas>
+        </div>
+        <div class="legend">
+          <div class="legend-item"><span class="legend-swatch" style="background:#0ea5e9"></span>Tuna (Prey)</div>
+          <div class="legend-item"><span class="legend-swatch" style="background:#f43f5e"></span>Sharks (Predators)</div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <script>
+    const controls = {
+      tunaInit: document.getElementById('p-tuna-init'),
+      sharkInit: document.getElementById('p-sharks-init'),
+      tunaBirth: document.getElementById('p-tuna-birth'),
+      hunt: document.getElementById('p-hunt'),
+      sharkDeath: document.getElementById('p-shark-death'),
+      dt: document.getElementById('p-dt'),
+      maxTime: document.getElementById('p-max-time'),
+      speed: document.getElementById('p-speed')
+    };
+
+    const displays = {
+      tunaInit: document.getElementById('v-tuna-init'),
+      sharkInit: document.getElementById('v-sharks-init'),
+      tunaBirth: document.getElementById('v-tuna-birth'),
+      hunt: document.getElementById('v-hunt'),
+      sharkDeath: document.getElementById('v-shark-death'),
+      dt: document.getElementById('v-dt'),
+      maxTime: document.getElementById('v-max-time'),
+      speed: document.getElementById('v-speed')
+    };
+
+    const runBtn = document.getElementById('runBtn');
+    const pauseBtn = document.getElementById('pauseBtn');
+    const resetBtn = document.getElementById('resetBtn');
+    const statusBar = document.getElementById('statusBar');
+    const mathStatus = document.getElementById('math-status');
+    const statTime = document.getElementById('stat-time');
+    const statTuna = document.getElementById('stat-tuna');
+    const statShark = document.getElementById('stat-shark');
+    const canvas = document.getElementById('customCanvas');
+    const ctx = canvas.getContext('2d');
+
+    let sim = null;
+    let animationId = null;
+    let isPaused = false;
+
+    function updateTextBadges() {
+      displays.tunaInit.textContent = controls.tunaInit.value;
+      displays.sharkInit.textContent = controls.sharkInit.value;
+      displays.tunaBirth.textContent = Number(controls.tunaBirth.value).toFixed(2);
+      displays.hunt.textContent = Number(controls.hunt.value).toFixed(3).replace(/0$/, '');
+      displays.sharkDeath.textContent = Number(controls.sharkDeath.value).toFixed(2);
+      displays.dt.textContent = Number(controls.dt.value).toFixed(2);
+      displays.maxTime.textContent = controls.maxTime.value;
+      displays.speed.textContent = controls.speed.value;
+
+      if (!sim || !sim.running) {
+        setStatus("Parameters modified. Click Run to start from t = 0.", '#d97706');
+      }
+      syncStatsPreview();
+      drawStaticPreview();
+    }
+
+    function setStatus(text, color) {
+      statusBar.textContent = text;
+      statusBar.style.color = color;
+      mathStatus.textContent = text;
+      mathStatus.style.color = color;
+    }
+
+    function syncStatsPreview() {
+      statTime.textContent = '0.00';
+      statTuna.textContent = Number(controls.tunaInit.value).toFixed(2);
+      statShark.textContent = Number(controls.sharkInit.value).toFixed(2);
+    }
+
+    function createSimulation() {
+      const T0 = Number(controls.tunaInit.value);
+      const S0 = Number(controls.sharkInit.value);
+      const dt = Number(controls.dt.value);
+      const maxTime = Number(controls.maxTime.value);
+
+      return {
+        T: T0,
+        S: S0,
+        a: Number(controls.tunaBirth.value),
+        b: Number(controls.hunt.value),
+        d: Number(controls.sharkDeath.value),
+        dt,
+        maxTime,
+        stepsPerFrame: Number(controls.speed.value),
+        time: 0,
+        step: 0,
+        totalSteps: Math.max(1, Math.floor(maxTime / dt)),
+        tunaPoints: [T0],
+        sharkPoints: [S0],
+        timePoints: [0],
+        maxVal: Math.max(T0, S0, 1),
+        running: true
+      };
+    }
+
+    function updateStats() {
+      if (!sim) return;
+      statTime.textContent = sim.time.toFixed(2);
+      statTuna.textContent = sim.T.toFixed(2);
+      statShark.textContent = sim.S.toFixed(2);
+    }
+
+    function stepSimulation(state) {
+      for (let n = 0; n < state.stepsPerFrame; n++) {
+        if (state.step >= state.totalSteps) {
+          state.running = false;
+          return;
+        }
+
+        const dT = (state.a * state.T) - (state.b * state.S * state.T);
+        const dS = (state.b * state.S * state.T) - (state.d * state.S);
+
+        state.T = Math.max(0, state.T + state.dt * dT);
+        state.S = Math.max(0, state.S + state.dt * dS);
+        state.time += state.dt;
+        state.step += 1;
+
+        state.tunaPoints.push(state.T);
+        state.sharkPoints.push(state.S);
+        state.timePoints.push(state.time);
+        state.maxVal = Math.max(state.maxVal, state.T, state.S);
+      }
+    }
+
+    function drawAxes(maxVal, maxTime) {
+      const pad = { left: 54, right: 16, top: 14, bottom: 36 };
+      const w = canvas.width - pad.left - pad.right;
+      const h = canvas.height - pad.top - pad.bottom;
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      ctx.strokeStyle = '#eef2f7';
+      ctx.lineWidth = 1;
+
+      for (let i = 0; i <= 4; i++) {
+        const y = pad.top + (h * i / 4);
+        ctx.beginPath();
+        ctx.moveTo(pad.left, y);
+        ctx.lineTo(canvas.width - pad.right, y);
+        ctx.stroke();
+
+        const labelVal = maxVal - (maxVal * i / 4);
+        ctx.fillStyle = '#64748b';
+        ctx.font = '10px sans-serif';
+        ctx.textAlign = 'right';
+        ctx.fillText(Math.round(labelVal), pad.left - 6, y + 3);
+      }
+
+      for (let i = 0; i <= 6; i++) {
+        const x = pad.left + (w * i / 6);
+        ctx.beginPath();
+        ctx.moveTo(x, pad.top);
+        ctx.lineTo(x, canvas.height - pad.bottom);
+        ctx.stroke();
+
+        ctx.textAlign = 'center';
+        ctx.fillStyle = '#64748b';
+        ctx.fillText((maxTime * i / 6).toFixed(0), x, canvas.height - pad.bottom + 14);
+      }
+
+      ctx.strokeStyle = '#94a3b8';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(pad.left, pad.top);
+      ctx.lineTo(pad.left, canvas.height - pad.bottom);
+      ctx.lineTo(canvas.width - pad.right, canvas.height - pad.bottom);
+      ctx.stroke();
+
+      ctx.fillStyle = '#475569';
+      ctx.font = '11px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('Time', pad.left + w / 2, canvas.height - 6);
+
+      ctx.save();
+      ctx.translate(14, pad.top + h / 2);
+      ctx.rotate(-Math.PI / 2);
+      ctx.fillText('Population', 0, 0);
+      ctx.restore();
+
+      return { ...pad, w, h };
+    }
+
+    function drawLine(values, times, color, maxVal, maxTime, box) {
+      if (values.length < 2) return;
+
+      ctx.beginPath();
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 2.5;
+      ctx.lineJoin = 'round';
+      ctx.lineCap = 'round';
+
+      for (let i = 0; i < values.length; i++) {
+        const x = box.left + (times[i] / maxTime) * box.w;
+        const y = box.top + box.h - (values[i] / maxVal) * box.h;
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+    }
+
+    function drawCurrentMarker(value, time, color, maxVal, maxTime, box) {
+      const x = box.left + (time / maxTime) * box.w;
+      const y = box.top + box.h - (value / maxVal) * box.h;
+      ctx.beginPath();
+      ctx.fillStyle = color;
+      ctx.arc(x, y, 3.5, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    function drawChart(state) {
+      const maxVal = Math.max(10, state.maxVal * 1.15);
+      const box = drawAxes(maxVal, state.maxTime);
+      drawLine(state.tunaPoints, state.timePoints, '#0ea5e9', maxVal, state.maxTime, box);
+      drawLine(state.sharkPoints, state.timePoints, '#f43f5e', maxVal, state.maxTime, box);
+      drawCurrentMarker(state.T, state.time, '#0ea5e9', maxVal, state.maxTime, box);
+      drawCurrentMarker(state.S, state.time, '#f43f5e', maxVal, state.maxTime, box);
+    }
+
+    function animate() {
+      if (!sim || isPaused) return;
+
+      stepSimulation(sim);
+      drawChart(sim);
+      updateStats();
+
+      if (sim.running) {
+        setStatus(`Running simulation... t = ${sim.time.toFixed(2)}`, '#2563eb');
+        animationId = requestAnimationFrame(animate);
+      } else {
+        setStatus(`Simulation complete. Final time = ${sim.time.toFixed(2)}`, '#16a34a');
+        animationId = null;
+      }
+    }
+
+    function startSimulation() {
+      if (animationId) cancelAnimationFrame(animationId);
+      isPaused = false;
+      pauseBtn.textContent = 'Pause';
+      sim = createSimulation();
+      drawChart(sim);
+      updateStats();
+      setStatus('Running simulation... t = 0.00', '#2563eb');
+      animationId = requestAnimationFrame(animate);
+    }
+
+    function togglePause() {
+      if (!sim) return;
+      if (!sim.running) return;
+
+      isPaused = !isPaused;
+      if (isPaused) {
+        if (animationId) cancelAnimationFrame(animationId);
+        animationId = null;
+        pauseBtn.textContent = 'Resume';
+        setStatus(`Paused at t = ${sim.time.toFixed(2)}`, '#d97706');
+      } else {
+        pauseBtn.textContent = 'Pause';
+        setStatus(`Running simulation... t = ${sim.time.toFixed(2)}`, '#2563eb');
+        animationId = requestAnimationFrame(animate);
+      }
+    }
+
+    function resetSimulation() {
+      if (animationId) cancelAnimationFrame(animationId);
+      animationId = null;
+      isPaused = false;
+      pauseBtn.textContent = 'Pause';
+      sim = null;
+      syncStatsPreview();
+      setStatus('Reset complete. Ready to run from t = 0.', '#16a34a');
+      drawStaticPreview();
+    }
+
+    function drawStaticPreview() {
+      const preview = {
+        T: Number(controls.tunaInit.value),
+        S: Number(controls.sharkInit.value),
+        maxVal: Math.max(Number(controls.tunaInit.value), Number(controls.sharkInit.value), 10),
+        maxTime: Number(controls.maxTime.value),
+        tunaPoints: [Number(controls.tunaInit.value)],
+        sharkPoints: [Number(controls.sharkInit.value)],
+        timePoints: [0],
+        time: 0
+      };
+      drawChart(preview);
+    }
+
+    Object.values(controls).forEach(control => {
+      control.addEventListener('input', updateTextBadges);
+    });
+
+    runBtn.addEventListener('click', startSimulation);
+    pauseBtn.addEventListener('click', togglePause);
+    resetBtn.addEventListener('click', resetSimulation);
+
+    updateTextBadges();
+    drawStaticPreview();
+  </script>
+</body>
+</html>
